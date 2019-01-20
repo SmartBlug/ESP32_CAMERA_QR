@@ -57,7 +57,6 @@ static camera_pixelformat_t s_pixel_format;
 #define CAMERA_PIXEL_FORMAT CAMERA_PF_JPEG
 #define CAMERA_FRAME_SIZE CAMERA_FS_VGA
 
-
 void app_main()
 {
     esp_log_level_set("wifi", ESP_LOG_WARN);
