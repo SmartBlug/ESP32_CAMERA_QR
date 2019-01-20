@@ -7,8 +7,9 @@
 
 #ifndef MAIN_LED_H_
 #define MAIN_LED_H_
-void led_init() ;
+void led_init();
 void led_open();
 void led_close();
-bool get_light_state(void) ;
+bool get_light_state(void);
+#define LED_GPIO 4
 #endif /* MAIN_LED_H_ */

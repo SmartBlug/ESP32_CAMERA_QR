@@ -31,6 +31,7 @@
 #include "camera.h"
 #include "bitmap.h"
 #include "http_server.h"
+#include "driver/gpio.h"
 #include "led.h"
 #include "qr_recoginize.h"
 static void handle_grayscale_pgm(http_context_t http_ctx, void *ctx);
@@ -38,6 +39,8 @@ static void handle_rgb_bmp(http_context_t http_ctx, void *ctx);
 static void handle_rgb_bmp_stream(http_context_t http_ctx, void *ctx);
 static void handle_jpg(http_context_t http_ctx, void *ctx);
 static void handle_jpg_stream(http_context_t http_ctx, void *ctx);
+static void handle_reset(http_context_t http_ctx, void *ctx);
+static void handle_led(http_context_t http_ctx, void *ctx);
 static esp_err_t event_handler(void *ctx, system_event_t *event);
 static void initialise_wifi(void);
 
@@ -53,8 +56,10 @@ static const int CONNECTED_BIT = BIT0;
 static ip4_addr_t s_ip_addr;
 static camera_pixelformat_t s_pixel_format;
 
+static bool flash_state = true;
+
 #define CAMERA_PIXEL_FORMAT CAMERA_PF_JPEG
-#define CAMERA_FRAME_SIZE CAMERA_FS_VGA
+#define CAMERA_FRAME_SIZE CAMERA_FS_SVGA
 
 void app_main()
 {
@@ -66,6 +71,9 @@ void app_main()
         ESP_ERROR_CHECK(nvs_flash_erase());
         ESP_ERROR_CHECK(nvs_flash_init());
     }
+
+    gpio_pad_select_gpio(LED_GPIO);
+    gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
 
     camera_config_t camera_config = {
         .ledc_channel = LEDC_CHANNEL_0,
@@ -150,6 +158,8 @@ void app_main()
         ESP_ERROR_CHECK(http_register_handler(server, "/jpg_stream", HTTP_GET, HTTP_HANDLE_RESPONSE, &handle_jpg_stream, NULL));
         ESP_LOGI(TAG, "Open http://" IPSTR "/jpg_stream for multipart/x-mixed-replace stream of JPEGs", IP2STR(&s_ip_addr));
     }
+    ESP_ERROR_CHECK(http_register_handler(server, "/reset", HTTP_GET, HTTP_HANDLE_RESPONSE, &handle_reset, NULL));
+    ESP_ERROR_CHECK(http_register_handler(server, "/led", HTTP_GET, HTTP_HANDLE_RESPONSE, &handle_led, NULL));
     ESP_LOGI(TAG, "Free heap: %u", xPortGetFreeHeapSize());
     ESP_LOGI(TAG, "Camera demo ready");
 }
@@ -322,6 +332,23 @@ static void handle_jpg_stream(http_context_t http_ctx, void *ctx)
     led_close();
 }
 
+static void handle_reset(http_context_t http_ctx, void *ctx)
+{
+    http_response_begin(http_ctx, 200, STREAM_CONTENT_TYPE, HTTP_RESPONSE_SIZE_UNKNOWN);
+    http_response_end(http_ctx);
+    ESP_LOGI(TAG, "Restarting...");
+    esp_restart();
+}
+
+static void handle_led(http_context_t http_ctx, void *ctx)
+{
+    http_response_begin(http_ctx, 200, STREAM_CONTENT_TYPE, HTTP_RESPONSE_SIZE_UNKNOWN);
+    flash_state = !flash_state;
+    ESP_LOGI(TAG, "Led... %d", flash_state);
+    gpio_set_level(LED_GPIO, flash_state);
+    http_response_end(http_ctx);
+}
+
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch (event->event_id)
@@ -365,5 +392,3 @@ static void initialise_wifi(void)
     xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
     ESP_LOGI(TAG, "Connected");
 }
-
-http_response_end(http_ctx);

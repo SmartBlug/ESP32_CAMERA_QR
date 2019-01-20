@@ -18,25 +18,24 @@ static bool light_state = true;
 //	/* Set the GPIO as a push/pull output */
 //	gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
 //}
-#define LEDC_LS_TIMER          LEDC_TIMER_1
-#define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#define LED_GPIO 4
-#define LEDC_TEST_DUTY 			300
-	ledc_channel_config_t ledc_channel = { .channel = LEDC_CHANNEL_1, .duty = 0,
-				.gpio_num = LED_GPIO, .speed_mode = LEDC_LS_MODE, .timer_sel =
-						LEDC_LS_TIMER };
-void led_init() {
-	int ch;
+#define LEDC_LS_TIMER LEDC_TIMER_1
+#define LEDC_LS_MODE LEDC_LOW_SPEED_MODE
+#define LEDC_TEST_DUTY 300
+ledc_channel_config_t ledc_channel = {.channel = LEDC_CHANNEL_1, .duty = 0, .gpio_num = LED_GPIO, .speed_mode = LEDC_LS_MODE, .timer_sel = LEDC_LS_TIMER};
+void led_init()
+{
+	//int ch;
 
 	/*
 	 * Prepare and set configuration of timers
 	 * that will be used by LED Controller
 	 */
-	ledc_timer_config_t ledc_timer = { .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
-			.freq_hz = 5000,                      // frequency of PWM signal
-			.speed_mode = LEDC_LS_MODE,           // timer mode
-			.timer_num = LEDC_LS_TIMER            // timer index
-			};
+	ledc_timer_config_t ledc_timer = {
+			.duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
+			.freq_hz = 5000,											// frequency of PWM signal
+			.speed_mode = LEDC_LS_MODE,						// timer mode
+			.timer_num = LEDC_LS_TIMER						// timer index
+	};
 	// Set configuration of timer0 for high speed channels
 	ledc_timer_config(&ledc_timer);
 
@@ -56,29 +55,32 @@ void led_init() {
 
 	ledc_channel_config(&ledc_channel);
 	ledc_fade_func_install(0);
-
-
 }
 
-void led_open() {
+void led_open()
+{
 	ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel,
-				LEDC_TEST_DUTY);
-		ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
-		vTaskDelay(5000 / portTICK_PERIOD_MS);
+								LEDC_TEST_DUTY);
+	ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
+	vTaskDelay(5000 / portTICK_PERIOD_MS);
 }
 
-void led_close() {
+void led_close()
+{
 	ledc_stop(ledc_channel.speed_mode, ledc_channel.channel, 0);
 }
 
-void open_light(void) {
+void open_light(void)
+{
 	light_state = true;
 }
 
-void close_light(void) {
+void close_light(void)
+{
 	light_state = false;
 }
 
-bool get_light_state(void) {
+bool get_light_state(void)
+{
 	return light_state;
 }
